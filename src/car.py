@@ -9,7 +9,7 @@ import pybullet as p
 
 class RaceCar:
     STEER_JOINTS = [4, 6]
-    DRIVE_JOINTS = [2, 3]
+    DRIVE_JOINTS = [2, 3, 5, 7]
 
     def __init__(self):
         self.car_id: int | None = None
