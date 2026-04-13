@@ -55,11 +55,12 @@ class CityCarPracticeApp:
         for gx, gy in self.path:
             wx, wy = self.city.grid_to_world(gx, gy)
 
+            # Propiedades Coche
+            THROTTLE = 30
+            MAX_STEER = 0.6
+            DISTANCE_TOLERANCE = 0.5
+            
             while True:
-                # Propiedades Coche
-                THROTTLE = 30
-                MAX_STEER = 0.6
-                DISTANCE_TOLERANCE = 0.5
                 pos, orn, yaw = self.car.get_pose()
                 car_x, car_y, _ = pos
 
@@ -71,6 +72,8 @@ class CityCarPracticeApp:
                 # Obtener siguiente posicion
                 if distance < DISTANCE_TOLERANCE :
                     break
+                
+                self.tracked_path.append((car_x, car_y))
 
                 # Angulo respecto al siguiente punto
                 angle_to_point = np.arctan2(delta_y, delta_x)
@@ -87,16 +90,23 @@ class CityCarPracticeApp:
         
     def run(self):
         start, goal, car_world_xy, _ = self.setup()
+        self.tracked_path = []
         self.try_astar(start, goal, car_world_xy)
         
-        # Dibujar el camino del A*
-        last_wx, last_wy = self.city.grid_to_world(start[0], start[1])
-        for gx, gy in self.path:
-            wx, wy = self.city.grid_to_world(gx, gy)
-            self.city.draw_path(last_wx, last_wy, wx, wy)
-            last_wx, last_wy = wx, wy
+        # # Dibujar el camino del A* -> ROJO
+        # last_wx, last_wy = self.city.grid_to_world(start[0], start[1])
+        # for gx, gy in self.path:
+        #     wx, wy = self.city.grid_to_world(gx, gy)
+        #     self.city.draw_path(last_wx, last_wy, wx, wy)
+        #     last_wx, last_wy = wx, wy
 
         self.move_car()
+
+        # Dibujar el camino recorrido por el coche -> VERDE
+        for i in range(1, len(self.tracked_path)):
+            x1, y1 = self.tracked_path[i - 1]
+            x2, y2 = self.tracked_path[i]
+            self.city.draw_path(x1, y1, x2, y2, [0, 1, 0])
 
         while self.simulation.is_connected():
             self.simulation.step()

@@ -95,11 +95,11 @@ class CityMap:
                         return (r, c)
         return None
     
-    def draw_path(self, x_start, y_start, x_end, y_end):
+    def draw_path(self, x_start, y_start, x_end, y_end, color: tuple[int, int, int] = [1,0,0]):
         p.addUserDebugLine(
             lineFromXYZ=[x_start, y_start, 0.05],
             lineToXYZ=[x_end, y_end, 0.05],
-            lineColorRGB=[1, 0, 0],
+            lineColorRGB=color,
             lineWidth=3
         )
 
