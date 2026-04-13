@@ -48,7 +48,7 @@ class CityMap:
         size = self.params.plane_size
         h = int(math.ceil(size / self.params.cell))
         w = int(math.ceil(size / self.params.cell))
-        return np.ones((h, w), dtype=np.uint8)
+        return np.ones((h, w), dtype=np.int16)
 
     def world_to_grid(self, x: float, y: float) -> GridPos:
         relx = x + self.half
@@ -68,13 +68,13 @@ class CityMap:
         self.road_rects.append((xmin, xmax, ymin, ymax))
 
     def bake_grid_roads(self):
-        self.grid[:] = 1
+        self.grid[:] = -1
         for (xmin, xmax, ymin, ymax) in self.road_rects:
             (r0, c0) = self.world_to_grid(xmin, ymin)
             (r1, c1) = self.world_to_grid(xmax, ymax)
             rr0, rr1 = sorted([r0, r1])
             cc0, cc1 = sorted([c0, c1])
-            self.grid[rr0:rr1 + 1, cc0:cc1 + 1] = 0
+            self.grid[rr0:rr1 + 1, cc0:cc1 + 1] = 1
 
     def nearest_free(self, x: float, y: float, max_rad_cells: int = 80) -> Optional[GridPos]:
         start = self.world_to_grid(x, y)
@@ -94,6 +94,14 @@ class CityMap:
                     if 0 <= r < h and 0 <= c < w and self.grid[r, c] == 0:
                         return (r, c)
         return None
+    
+    def draw_path(self, x_start, y_start, x_end, y_end):
+        p.addUserDebugLine(
+            lineFromXYZ=[x_start, y_start, 0.05],
+            lineToXYZ=[x_end, y_end, 0.05],
+            lineColorRGB=[1, 0, 0],
+            lineWidth=3
+        )
 
     def build_world(self):
         pz = self.params
