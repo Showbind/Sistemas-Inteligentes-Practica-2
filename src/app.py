@@ -1,7 +1,7 @@
 from __future__ import annotations
+import numpy as np
 import argparse
 import cv2
-
 from .planner import AStarPlanner
 from .city_map import CityMap, MapParams
 from .car import RaceCar
@@ -41,34 +41,62 @@ class CityCarPracticeApp:
         return start, goal, (x0, y0), (xg, yg)
 
     def try_astar(self, start, goal, car_world_xy):
-        try:
-            path = self.planner.a_star(self.city.grid, start, goal, allow_diag=False)
-            if path is not None:
-                self.simulation.add_info_text(
-                    "A* implementado: integra aqui el movimiento del coche",
-                    car_world_xy[0],
-                    car_world_xy[1],
-                    color=(0, 1, 0),
-                    life_time=3.0,
-                )
-        except NotImplementedError as e:
-            print("==========================================")
-            print("A* no está implementado todavía.")
-            print("El entorno se abrirá, pero el coche no se moverá.")
-            print(f"Detalle: {e}")
-            print("==========================================")
+        self.path = self.planner.a_star(self.city.grid, start, goal, allow_diag=True)
+        if self.path is not None:
             self.simulation.add_info_text(
-                "Implementa A* para mover el coche",
+                "A* implementado: integra aqui el movimiento del coche",
                 car_world_xy[0],
                 car_world_xy[1],
-                color=(1, 1, 0),
-                life_time=0,
+                color=(0, 1, 0),
+                life_time=3.0,
             )
 
+    def move_car(self):
+        for gx, gy in self.path:
+            wx, wy = self.city.grid_to_world(gx, gy)
+
+            while True:
+                # Propiedades Coche
+                THROTTLE = 30
+                MAX_STEER = 0.6
+                DISTANCE_TOLERANCE = 0.5
+                pos, orn, yaw = self.car.get_pose()
+                car_x, car_y, _ = pos
+
+                # Distancia entre el coche y el siguiente punto
+                delta_x = wx - car_x
+                delta_y = wy - car_y
+                distance = np.sqrt(delta_x**2 + delta_y**2)
+
+                # Obtener siguiente posicion
+                if distance < DISTANCE_TOLERANCE :
+                    break
+
+                # Angulo respecto al siguiente punto
+                angle_to_point = np.arctan2(delta_y, delta_x)
+                delta_angle_car_yaw = angle_to_point - yaw 
+                normal_delta_angle = (delta_angle_car_yaw + np.pi) % (2 * np.pi) - np.pi
+                        
+                steering = float(np.clip(normal_delta_angle, -MAX_STEER, MAX_STEER))
+                
+                # Mover coche
+                self.car.set_control(steering, THROTTLE)
+                self.simulation.step() 
+
+        self.car.stop()
+        
     def run(self):
         start, goal, car_world_xy, _ = self.setup()
         self.try_astar(start, goal, car_world_xy)
-        self.car.stop()
+        
+        # Dibujar el camino del A*
+        last_wx, last_wy = self.city.grid_to_world(start[0], start[1])
+        for gx, gy in self.path:
+            wx, wy = self.city.grid_to_world(gx, gy)
+            self.city.draw_path(last_wx, last_wy, wx, wy)
+            last_wx, last_wy = wx, wy
+
+        self.move_car()
 
         while self.simulation.is_connected():
             self.simulation.step()
