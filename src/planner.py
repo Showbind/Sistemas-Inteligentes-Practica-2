@@ -29,7 +29,7 @@ class AStarPlanner:
 
         # Distancia Euclidiana
         if allow_diag: 
-            return np.sqrt(x^2 + y^2)
+            return np.sqrt(x**2 + y**2)
 
         # Distancia Manhattan
         return x + y 
@@ -49,7 +49,7 @@ class AStarPlanner:
         """
 
         x, y = current_node.position
-        grid_width, grid_height = grid.shape
+        grid_height, grid_width = grid.shape
         real_neighbours = []
 
         neighbours = [
@@ -68,12 +68,14 @@ class AStarPlanner:
             ]
 
         for neighbour_x, neighbour_y in neighbours:
-            if (0 <= neighbour_x < grid_width) and (0 <= neighbour_y < grid_height) and (grid[neighbour_x][neighbour_y] != "x"):    
-                coste_nodo = (current_node.g * np.sqrt(2)) if (neighbour_x != x and neighbour_y != y) else current_node.g # Si cambian tanto x como y el vecino es diagonal -> Aplicar pitagoras
-                
+            if (0 <= neighbour_x < grid_height) and (0 <= neighbour_y < grid_width) and (grid[neighbour_x][neighbour_y] != -1): # Obstaculo = -1    
                 vecino_posicion = (neighbour_x, neighbour_y)
-                g =  coste_nodo + int(grid[neighbour_x][neighbour_y])
-                h = self._heuristic(vecino_posicion, self.goal)
+                paso_vecino = np.sqrt(2) if (neighbour_x != x and neighbour_y != y) else 1 # Si el vecino es diagonal
+                coste_nodo = grid[neighbour_x][neighbour_y]
+
+                g = current_node.g + (paso_vecino * coste_nodo)
+
+                h = self._heuristic(vecino_posicion, self.goal, allow_diag = allow_diag)
 
                 vecino = self.Node(vecino_posicion, g, h)
                 real_neighbours.append(vecino)
@@ -225,7 +227,7 @@ def main():
     grid = np.array([
         [1,  1,  1,  1,  1],
         [1, "x", 1, "x", 1],
-        [1,  1,  2,  1,  1],
+        [1,  1,  20,  1,  1],
         [1, "x", 1, "x", 1],
         [1,  1,  1,  1,  1]
     ])
